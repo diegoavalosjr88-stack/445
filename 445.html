@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>MAÑAS TAQUERÍA | POS System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* evita selección molesta en botones */
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background: #eeeeee;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* pantallas / frames */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transition: all 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .inicio-frame {
+            background: #ff7043;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+
+        .app-frame {
+            background: #eeeeee;
+            display: none;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        /* contenido app (3 columnas responsivas) */
+        .app-container {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            justify-content: center;
+        }
+
+        .menu-panel {
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            padding: 20px;
+            width: 380px;
+            flex-shrink: 0;
+        }
+
+        .pedido-panel {
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            padding: 20px;
+            width: 360px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .total-panel {
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            padding: 25px;
+            width: 280px;
+            flex-shrink: 0;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* tabs estilo notebook */
+        .tabs {
+            display: flex;
+            gap: 6px;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: #f0f0f0;
+            border: none;
+            padding: 10px 18px;
+            font-weight: bold;
+            border-radius: 30px 30px 12px 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 15px;
+        }
+        .tab-btn.active {
+            background: #ff7043;
+            color: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* grilla de carnes/botones */
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 15px 0;
+        }
+        .food-btn {
+            background: #ff7043;
+            border: none;
+            color: white;
+            font-weight: bold;
+            padding: 12px 0;
+            border-radius: 40px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.05s linear, background 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .food-btn:active {
+            transform: scale(0.97);
+        }
+        .cemita-btn {
+            background: #43a047;
+        }
+        .refresco-btn {
+            background: #6a1b9a;
+        }
+        .agua-btn {
+            background: #00897b;
+        }
+        .mitad-btn {
+            background: #bf360c;
+            margin-top: 8px;
+            width: 100%;
+        }
+        .cantidad-area {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .cantidad-label {
+            font-weight: bold;
+        }
+        .spinbox {
+            width: 80px;
+            padding: 8px;
+            font-size: 16px;
+            border-radius: 30px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+        .option-select {
+            padding: 8px;
+            border-radius: 30px;
+            border: 1px solid #ccc;
+            background: white;
+        }
+        .pedido-listbox {
+            background: #fafafa;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            min-height: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 15px 0;
+            padding: 10px;
+        }
+        .pedido-item {
+            background: #fff3e0;
+            margin: 6px 0;
+            padding: 8px 12px;
+            border-radius: 40px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            border-left: 5px solid #ff7043;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .pedido-item.selected {
+            background: #ffe0b5;
+            border-left-color: #d32f2f;
+        }
+        .total-num {
+            font-size: 48px;
+            font-weight: bold;
+            color: #2e7d32;
+            margin: 20px 0;
+        }
+        .btn-primario {
+            background: #2e7d32;
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 60px;
+            font-weight: bold;
+            font-size: 18px;
+            width: 100%;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 10px;
+        }
+        .btn-secundario {
+            background: #424242;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-eliminar {
+            background: #d32f2f;
+            margin-top: 8px;
+        }
+        .inicio-titulo {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+        .inicio-frase {
+            font-size: 20px;
+            font-style: italic;
+            margin-bottom: 40px;
+        }
+        .btn-ir-menu {
+            background: white;
+            color: #ff7043;
+            border: none;
+            padding: 16px 40px;
+            font-size: 22px;
+            font-weight: bold;
+            border-radius: 60px;
+            cursor: pointer;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+            transition: 0.1s linear;
+        }
+        .btn-ir-menu:active {
+            transform: scale(0.96);
+        }
+        .home-icon-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: #424242;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .modal-mitad {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: 0.2s;
+        }
+        .modal-card {
+            background: white;
+            border-radius: 48px;
+            padding: 25px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.3);
+        }
+        .modal-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .cerrar-modal {
+            margin-top: 10px;
+            background: #9e9e9e;
+        }
+        .fade-transition {
+            transition: all 0.2s;
+        }
+        footer {
+            font-size: 10px;
+            text-align: center;
+            margin-top: 10px;
+            color: #aaa;
+        }
+        @media (max-width: 1100px) {
+            .app-container { flex-direction: column; align-items: center; }
+            .menu-panel, .pedido-panel, .total-panel { width: 90%; max-width: 450px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- PANTALLA INICIO -->
+<div id="inicioScreen" class="screen inicio-frame">
+    <div class="inicio-titulo">🌮 MAÑAS TAQUERÍA</div>
+    <div class="inicio-frase">🔥 El sabor que hace regresar a tus clientes 🔥</div>
+    <button id="btnIrMenu" class="btn-ir-menu">📝 IR AL MENÚ</button>
+</div>
+
+<!-- PANTALLA APP (POS) -->
+<div id="appScreen" class="screen app-frame">
+    <button id="btnHome" class="home-icon-btn">🏠 Inicio</button>
+    <div class="app-container">
+        <!-- COLUMNA MENÚ -->
+        <div class="menu-panel">
+            <div class="cantidad-area">
+                <span class="cantidad-label">🔢 Cantidad:</span>
+                <input type="number" id="cantidadInput" class="spinbox" value="1" min="1" max="100">
+            </div>
+            <div class="tabs" id="tabsContainer">
+                <button class="tab-btn active" data-tab="tacos">🌮 Tacos</button>
+                <button class="tab-btn" data-tab="cemitas">🥙 Cemitas</button>
+                <button class="tab-btn" data-tab="bebidas">🥤 Bebidas</button>
+            </div>
+            <!-- CONTENIDO TABS -->
+            <div id="tabTacos" class="tab-content active">
+                <div class="items-grid" id="tacosGrid"></div>
+                <button id="mitadTacoBtn" class="food-btn mitad-btn">✨ MITAD Y MITAD (Taco)</button>
+            </div>
+            <div id="TabCemitas" class="tab-content">
+                <div class="items-grid" id="cemitasGrid"></div>
+            </div>
+            <div id="TabBebidas" class="tab-content">
+                <div class="items-grid" id="refrescosGrid"></div>
+                <div style="margin-top: 20px; border-top: 1px solid #ddd; padding-top: 15px;">
+                    <div style="font-weight: bold; margin-bottom: 10px;">💧 AGUAS FRESCAS</div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                        <select id="aguaTipoSelect" class="option-select">
+                            <option value="Horchata">Horchata</option>
+                            <option value="Jamaica">Jamaica</option>
+                            <option value="Maracuyá">Maracuyá</option>
+                        </select>
+                        <select id="aguaTamanoSelect" class="option-select">
+                            <option value="Litro">Litro ($35/40)</option>
+                            <option value="Medio">Medio ($20)</option>
+                        </select>
+                    </div>
+                    <button id="agregarAguaBtn" class="food-btn agua-btn">➕ Agregar Agua</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMNA PEDIDO -->
+        <div class="pedido-panel">
+            <h3 style="text-align: center;">🧾 PEDIDO</h3>
+            <div id="pedidoList" class="pedido-listbox">
+                <!-- items dinámicos -->
+                <div style="color: gray; text-align: center; padding: 20px;">No hay productos</div>
+            </div>
+            <button id="eliminarBtn" class="btn-secundario btn-eliminar">❌ Eliminar seleccionado</button>
+        </div>
+
+        <!-- COLUMNA TOTAL -->
+        <div class="total-panel">
+            <h3>💰 TOTAL</h3>
+            <div id="totalAmount" class="total-num">$0.00</div>
+            <button id="cobrarBtn" class="btn-primario">💵 Cobrar</button>
+        </div>
+    </div>
+    <footer>MAÑAS TAQUERÍA · Sabor que regresa</footer>
+</div>
+
+<!-- MODAL MITAD Y MITAD -->
+<div id="mitadModal" class="modal-mitad">
+    <div class="modal-card">
+        <h3>🌮 Selecciona dos carnes</h3>
+        <div id="modalCarnesGrid" class="modal-grid"></div>
+        <button id="cancelarModalBtn" class="food-btn cerrar-modal" style="background:#777;">Cancelar</button>
+    </div>
+</div>
+
+<script>
+    // ----- CONFIGURACIÓN DE PRECIOS Y DATOS -----
+    const PRECIO_TACO = 25;
+    const PRECIO_CEMITA = 30;
+    const PRECIO_REFRESCO = 25;
+
+    const CARNES = [
+        "Carne enchilada", "Longaniza", "Carnitas", "Bistec",
+        "Rellena", "Carne asada", "Costilla", "Oreja", "Lengua", "Buche"
+    ];
+
+    const REFRESCOS = [
+        "Coca Cola", "Pepsi", "Mirinda", "Manzanita",
+        "Jarrito Piña", "Jarrito Fresa", "Jarrito Tamarindo",
+        "Boing Fresa", "Boing Mango", "Boing Guayaba", "Boing Uva"
+    ];
+
+    const AGUAS_LISTA = ["Horchata", "Jamaica", "Maracuyá"];
+
+    function precioAgua(tipo, tamaño) {
+        if (tipo === "Horchata") {
+            return tamaño === "Litro" ? 40 : 20;
+        } else {
+            return tamaño === "Litro" ? 35 : 20;
+        }
+    }
+
+    // ----- ESTADO DE ÓRDENES -----
+    let ordenes = [];       // { tipo, detalle, cantidad, precio }
+    let selectedPedidoIndex = null;
+
+    // Elementos DOM
+    const inicioScreen = document.getElementById('inicioScreen');
+    const appScreen = document.getElementById('appScreen');
+    const btnIrMenu = document.getElementById('btnIrMenu');
+    const btnHome = document.getElementById('btnHome');
+    const cantidadInput = document.getElementById('cantidadInput');
+    const pedidoListDiv = document.getElementById('pedidoList');
+    const totalAmountSpan = document.getElementById('totalAmount');
+    const eliminarBtn = document.getElementById('eliminarBtn');
+    const cobrarBtn = document.getElementById('cobrarBtn');
+    const mitadTacoBtn = document.getElementById('mitadTacoBtn');
+    const agregarAguaBtn = document.getElementById('agregarAguaBtn');
+    const aguaTipoSelect = document.getElementById('aguaTipoSelect');
+    const aguaTamanoSelect = document.getElementById('aguaTamanoSelect');
+    const mitadModal = document.getElementById('mitadModal');
+    const modalCarnesGrid = document.getElementById('modalCarnesGrid');
+    const cancelarModalBtn = document.getElementById('cancelarModalBtn');
+
+    // Referencia para callback mitad
+    let pendingMitadCallback = null;
+
+    // ---- FUNCIONES DE RENDER Y LÓGICA ----
+    function actualizarPedidoUI() {
+        pedidoListDiv.innerHTML = '';
+        if (ordenes.length === 0) {
+            pedidoListDiv.innerHTML = '<div style="color: gray; text-align: center; padding: 20px;">No hay productos</div>';
+            totalAmountSpan.innerText = '$0.00';
+            return;
+        }
+        let total = 0;
+        ordenes.forEach((orden, idx) => {
+            total += orden.precio;
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'pedido-item';
+            if (selectedPedidoIndex === idx) itemDiv.classList.add('selected');
+            const texto = `${orden.cantidad} ${orden.tipo} ${orden.detalle}`;
+            const precioSpan = document.createElement('span');
+            precioSpan.style.fontWeight = 'bold';
+            precioSpan.innerText = `$${orden.precio.toFixed(2)}`;
+            itemDiv.innerHTML = `<span>${texto}</span>`;
+            itemDiv.appendChild(precioSpan);
+            itemDiv.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (selectedPedidoIndex === idx) {
+                    selectedPedidoIndex = null;
+                } else {
+                    selectedPedidoIndex = idx;
+                }
+                actualizarPedidoUI();
+            });
+            pedidoListDiv.appendChild(itemDiv);
+        });
+        totalAmountSpan.innerText = `$${total.toFixed(2)}`;
+    }
+
+    function agregarProducto(tipo, detalle, precioUnitario) {
+        let cant = parseInt(cantidadInput.value);
+        if (isNaN(cant) || cant < 1) cant = 1;
+        const existe = ordenes.find(o => o.tipo === tipo && o.detalle === detalle);
+        if (existe) {
+            existe.cantidad += cant;
+            existe.precio += cant * precioUnitario;
+        } else {
+            ordenes.push({
+                tipo: tipo,
+                detalle: detalle,
+                cantidad: cant,
+                precio: cant * precioUnitario
+            });
+        }
+        selectedPedidoIndex = null;
+        actualizarPedidoUI();
+    }
+
+    function eliminarSeleccionado() {
+        if (selectedPedidoIndex !== null && ordenes[selectedPedidoIndex]) {
+            ordenes.splice(selectedPedidoIndex, 1);
+            selectedPedidoIndex = null;
+            actualizarPedidoUI();
+        } else {
+            // feedback visual simple
+            const msg = document.createElement('div');
+            msg.innerText = 'Selecciona un ítem para eliminar';
+            msg.style.position = 'fixed'; msg.style.bottom = '20px'; msg.style.left = '20px';
+            msg.style.background = '#d32f2f'; msg.style.color = 'white'; msg.style.padding = '8px 15px'; msg.style.borderRadius = '30px';
+            document.body.appendChild(msg);
+            setTimeout(() => msg.remove(), 1500);
+        }
+    }
+
+    function cobrarPedido() {
+        if (ordenes.length === 0) return;
+        ordenes = [];
+        selectedPedidoIndex = null;
+        actualizarPedidoUI();
+    }
+
+    // Modal mitad y mitad
+    function mostrarMitadModal(tipoItem, precioUnitario) {
+        // Llenar grid de carnes
+        modalCarnesGrid.innerHTML = '';
+        CARNES.forEach(carne => {
+            const btn = document.createElement('button');
+            btn.innerText = carne;
+            btn.className = 'food-btn';
+            btn.style.background = '#ff8a65';
+            btn.addEventListener('click', () => {
+                if (!pendingMitadCallback) return;
+                pendingMitadCallback(carne);
+            });
+            modalCarnesGrid.appendChild(btn);
+        });
+        // callback temporal
+        let seleccionadas = [];
+        pendingMitadCallback = (carneSeleccionada) => {
+            seleccionadas.push(carneSeleccionada);
+            if (seleccionadas.length === 2) {
+                const detalleMitad = `${seleccionadas[0]} / ${seleccionadas[1]}`;
+                agregarProducto(tipoItem, detalleMitad, precioUnitario);
+                cerrarModal();
+                seleccionadas = [];
+                pendingMitadCallback = null;
+            } else {
+                // resaltar que falta una
+                const toast = document.createElement('div');
+                toast.innerText = `Selecciona una segunda carne (${seleccionadas[0]} + ?)`;
+                toast.style.position = 'fixed'; toast.style.bottom = '20px'; toast.style.left = '50%';
+                toast.style.transform = 'translateX(-50%)'; toast.style.background = '#ff9800'; toast.style.color = 'white';
+                toast.style.padding = '8px 20px'; toast.style.borderRadius = '40px'; toast.style.zIndex = '1100';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 1200);
+            }
+        };
+        mitadModal.style.visibility = 'visible';
+        mitadModal.style.opacity = '1';
+    }
+
+    function cerrarModal() {
+        mitadModal.style.visibility = 'hidden';
+        mitadModal.style.opacity = '0';
+        pendingMitadCallback = null;
+    }
+
+    // Manejo de agregar agua
+    function agregarAgua() {
+        const tipo = aguaTipoSelect.value;
+        const tamaño = aguaTamanoSelect.value;
+        const precio = precioAgua(tipo, tamaño);
+        agregarProducto("Agua", `${tipo} ${tamaño}`, precio);
+    }
+
+    // ----- RENDER DINÁMICO DE BOTONES (CARNES, CEMITAS, REFRESCOS) -----
+    function llenarBotones() {
+        const tacosGrid = document.getElementById('tacosGrid');
+        const cemitasGrid = document.getElementById('cemitasGrid');
+        const refrescosGrid = document.getElementById('refrescosGrid');
+        
+        tacosGrid.innerHTML = '';
+        cemitasGrid.innerHTML = '';
+        refrescosGrid.innerHTML = '';
+        
+        CARNES.forEach(carne => {
+            const btnTaco = document.createElement('button');
+            btnTaco.innerText = carne;
+            btnTaco.className = 'food-btn';
+            btnTaco.addEventListener('click', () => agregarProducto('Taco', carne, PRECIO_TACO));
+            tacosGrid.appendChild(btnTaco);
+            
+            const btnCemita = document.createElement('button');
+            btnCemita.innerText = carne;
+            btnCemita.className = 'food-btn cemita-btn';
+            btnCemita.addEventListener('click', () => agregarProducto('Cemita', carne, PRECIO_CEMITA));
+            cemitasGrid.appendChild(btnCemita);
+        });
+        
+        REFRESCOS.forEach(ref => {
+            const btnRef = document.createElement('button');
+            btnRef.innerText = ref;
+            btnRef.className = 'food-btn refresco-btn';
+            btnRef.addEventListener('click', () => agregarProducto('Refresco', ref, PRECIO_REFRESCO));
+            refrescosGrid.appendChild(btnRef);
+        });
+    }
+
+    // ---- LOGICA TABS ----
+    function initTabs() {
+        const btns = document.querySelectorAll('.tab-btn');
+        const contents = {
+            tacos: document.getElementById('tabTacos'),
+            cemitas: document.getElementById('TabCemitas'),
+            bebidas: document.getElementById('TabBebidas')
+        };
+        btns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.getAttribute('data-tab');
+                btns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                Object.values(contents).forEach(c => c.classList.remove('active'));
+                if (tabId === 'tacos') contents.tacos.classList.add('active');
+                else if (tabId === 'cemitas') contents.cemitas.classList.add('active');
+                else if (tabId === 'bebidas') contents.bebidas.classList.add('active');
+            });
+        });
+    }
+    
+    // TRANSICIONES (fade + cambio de pantalla)
+    function fadeOutIn(fromScreen, toScreen, callback) {
+        fromScreen.style.transition = 'opacity 0.2s';
+        toScreen.style.transition = 'opacity 0.2s';
+        fromScreen.style.opacity = '0';
+        setTimeout(() => {
+            fromScreen.style.display = 'none';
+            toScreen.style.display = 'flex';
+            toScreen.style.opacity = '0';
+            setTimeout(() => {
+                toScreen.style.opacity = '1';
+                if (callback) callback();
+            }, 20);
+        }, 200);
+    }
+    
+    function irAMenu() {
+        // animación de altura simulada (ligera)
+        inicioScreen.style.opacity = '0';
+        setTimeout(() => {
+            inicioScreen.style.display = 'none';
+            appScreen.style.display = 'block';
+            appScreen.style.opacity = '0';
+            setTimeout(() => {
+                appScreen.style.opacity = '1';
+                // reiniciar selección
+                selectedPedidoIndex = null;
+                actualizarPedidoUI();
+            }, 30);
+        }, 180);
+    }
+    
+    function irInicio() {
+        appScreen.style.opacity = '0';
+        setTimeout(() => {
+            appScreen.style.display = 'none';
+            inicioScreen.style.display = 'flex';
+            inicioScreen.style.opacity = '0';
+            setTimeout(() => {
+                inicioScreen.style.opacity = '1';
+            }, 20);
+        }, 180);
+    }
+    
+    // Asignar eventos globales
+    btnIrMenu.addEventListener('click', irAMenu);
+    btnHome.addEventListener('click', irInicio);
+    eliminarBtn.addEventListener('click', eliminarSeleccionado);
+    cobrarBtn.addEventListener('click', cobrarPedido);
+    mitadTacoBtn.addEventListener('click', () => mostrarMitadModal('Taco', PRECIO_TACO));
+    agregarAguaBtn.addEventListener('click', agregarAgua);
+    cancelarModalBtn.addEventListener('click', cerrarModal);
+    // cerrar modal al hacer click fuera (opcional)
+    mitadModal.addEventListener('click', (e) => {
+        if (e.target === mitadModal) cerrarModal();
+    });
+    
+    // inicializar grids y tabs
+    llenarBotones();
+    initTabs();
+    actualizarPedidoUI();
+    
+    // mostrar inicio con fade elegante (similar al fade_in original)
+    inicioScreen.style.opacity = '0';
+    appScreen.style.display = 'none';
+    setTimeout(() => {
+        inicioScreen.style.opacity = '1';
+    }, 50);
+    
+    // efecto de presión en botones (visual)
+    document.querySelectorAll('.food-btn, .btn-primario, .btn-ir-menu, .btn-secundario, .tab-btn').forEach(btn => {
+        btn.addEventListener('mousedown', () => { btn.style.transform = 'scale(0.96)'; });
+        btn.addEventListener('mouseup', () => { btn.style.transform = ''; });
+        btn.addEventListener('mouseleave', () => { btn.style.transform = ''; });
+    });
+    
+    // ajuste de cantidad solo números
+    cantidadInput.addEventListener('change', () => {
+        let v = parseInt(cantidadInput.value);
+        if (isNaN(v) || v < 1) cantidadInput.value = 1;
+        if (v > 100) cantidadInput.value = 100;
+    });
+    
+    // Por defecto pantalla inicio activa
+    inicioScreen.style.display = 'flex';
+    appScreen.style.display = 'none';
+</script>
+</body>
+</html>
